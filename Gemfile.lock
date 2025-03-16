@@ -5,6 +5,7 @@ GEM
       public_suffix (>= 2.0.2, < 7.0)
     ast (2.4.2)
     bigdecimal (3.1.9)
+    byebug (11.1.3)
     crack (1.0.0)
       bigdecimal
       rexml
@@ -62,6 +63,7 @@ PLATFORMS
   aarch64-linux
 
 DEPENDENCIES
+  byebug
   dotenv
   rspec
   rubocop-rspec
