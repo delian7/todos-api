@@ -13,18 +13,36 @@ class NotionClient
   NOTION_API_URL = 'https://api.notion.com/v1/pages'
   DATABASE_ID = ENV.fetch('NOTION_DATABASE_ID')
   NOTION_DATABASE_API_URL = "https://api.notion.com/v1/databases/#{DATABASE_ID}/query"
-  NOTION_API_TOKEN = ENV['NOTION_API_TOKEN'].freeze
   NOTION_URI = URI.parse(NOTION_DATABASE_API_URL)
+
+  STATUS_ID = 'J%3Bjh'
+  SPECIFIC_ITEMS_ID = 'SE%7Be'
+  LOCATION_ID = 'W%5ERD'
+  PRODUCT_CATEGORY_ID = 'fUon'
+  EMPLOYEE_NAME_ID = 'title'
 
   def initialize
     @api_key = ENV.fetch('NOTION_API_KEY')
   end
 
-  def notion_data
-    notion_response_body
+  def notion_data(raw_data: false)
+    return notion_response_body if raw_data
+
+    notion_response_body.fetch('results').map do |data|
+      {
+        employee_name: find_property_by_id(data, EMPLOYEE_NAME_ID).dig('title', 0, 'text', 'content'),
+        specific_item: find_property_by_id(data, SPECIFIC_ITEMS_ID).dig('select', 'name'),
+        product_category: find_property_by_id(data, PRODUCT_CATEGORY_ID).dig('select', 'name'),
+        status: find_property_by_id(data, STATUS_ID).dig('status', 'name')
+      }
+    end
   end
 
   private
+
+  def find_property_by_id(data, id)
+    data['properties'].values.find { |property| property['id'] == id }
+  end
 
   def notion_response_body
     request = notion_request

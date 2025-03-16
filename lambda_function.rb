@@ -7,20 +7,18 @@ require_relative 'notion_client'
 def lambda_handler(event:, context:) # rubocop:disable Lint/UnusedMethodArgument
   http_method = event['httpMethod']
   # resource = event['resource']
+  raw_data = event.dig('queryStringParameters', 'raw_data')
+
+  notion_client = NotionClient.new
 
   case http_method
   when 'GET'
-    send_response(notion_data)
+    send_response(notion_client.notion_data(raw_data: raw_data))
   else
     method_not_allowed_response
   end
 rescue StandardError => e
   error_response(e)
-end
-
-def notion_data
-  notion_client = NotionClient.new
-  notion_client.notion_data
 end
 
 def send_response(data)
