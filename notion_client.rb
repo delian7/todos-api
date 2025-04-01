@@ -13,55 +13,70 @@ class NotionClient
   NOTION_API_URL = 'https://api.notion.com/v1/pages'
   DATABASE_ID = ENV.fetch('NOTION_DATABASE_ID')
   NOTION_DATABASE_API_URL = "https://api.notion.com/v1/databases/#{DATABASE_ID}/query"
-  NOTION_URI = URI.parse(NOTION_DATABASE_API_URL)
+
+  GET_ALL_TODOS = 'all'
+  CREATE_TODO = 'new'
 
   def initialize
     @api_key = ENV.fetch('NOTION_API_KEY')
   end
 
-  def notion_data(raw_data: false)
-    return notion_response_body(todos_payload) if raw_data
+  def notion_data(operation, name: nil, raw_data: false)
+    return notion_response_body(operation, all_todos_payload) if raw_data
 
-    response = notion_response_body(todos_payload)
-    results = response['results']
+    case operation
+    when GET_ALL_TODOS
+      payload = all_todos_payload
+      response = notion_response_body(operation, payload)
+      results = response['results']
+      return [] if results.empty? && operation == GET_ALL_TODOS
 
-    return [] if results.empty?
-
-    results.map do |todo|
-      properties = todo['properties']
-      {
-        name: properties.dig('Name', 'title', 0, 'text', 'content'),
-        date: properties.dig('Date', 'date', 'start'),
-        id: todo['id']
-      }
+      results.map do |todo|
+        properties = todo['properties']
+        {
+          name: properties.dig('Name', 'title', 0, 'text', 'content'),
+          date: properties.dig('Date', 'date', 'start'),
+          id: todo['id']
+        }
+      end
+    when CREATE_TODO
+      payload = create_todo_payload(name)
+      notion_response_body(operation, payload)
+      { message: 'Todo created successfully' }
     end
   end
 
   private
 
-  def find_property_by_id(data, id)
-    data['properties'].values.find { |property| property['id'] == id }
-  end
+  def notion_response_body(operation, payload)
+    url = case operation
+          when GET_ALL_TODOS
+            NOTION_DATABASE_API_URL
+          when CREATE_TODO
+            NOTION_API_URL
+          else
+            raise ArgumentError, 'Invalid operation'
+          end
 
-  def notion_response_body(payload)
-    request = notion_request
+    request, uri = notion_request(url)
     request.body = payload.to_json
-    response = Net::HTTP.start(NOTION_URI.hostname, NOTION_URI.port, use_ssl: true) do |http|
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
       http.request(request)
     end
 
     JSON.parse(response.body)
   end
 
-  def notion_request
-    request = Net::HTTP::Post.new(NOTION_URI)
+  def notion_request(url)
+    uri = URI.parse(url)
+    request = Net::HTTP::Post.new(uri)
     request['Authorization'] = "Bearer #{@api_key}"
     request['Content-Type'] = 'application/json'
     request['Notion-Version'] = '2022-06-28'
-    request
+    [request, uri]
   end
 
-  def todos_payload
+  def all_todos_payload
     {
       filter: {
         and: [
@@ -87,6 +102,22 @@ class NotionClient
         property: 'Date',
         direction: 'ascending'
       }]
+    }
+  end
+
+  def create_todo_payload(name)
+    {
+      parent: { database_id: DATABASE_ID },
+      properties: {
+        Name: {
+          title: [{ text: { content: name } }]
+        },
+        Date: {
+          date: {
+            start: Time.now.getlocal('-08:00').strftime('%Y-%m-%d')
+          }
+        }
+      }
     }
   end
 end

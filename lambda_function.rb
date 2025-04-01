@@ -13,7 +13,12 @@ def lambda_handler(event:, context:) # rubocop:disable Lint/UnusedMethodArgument
 
   case http_method
   when 'GET'
-    send_response(notion_client.notion_data(raw_data: raw_data))
+    send_response(notion_client.notion_data(operation: NotionClient::GET_ALL_TODOS, raw_data: raw_data))
+  when 'POST'
+    raise 'todo name is required' if event['body'].nil?
+
+    name = JSON.parse(event['body'])['name']
+    send_response(notion_client.notion_data(NotionClient::CREATE_TODO, name: name))
   else
     method_not_allowed_response
   end
