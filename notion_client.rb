@@ -135,6 +135,12 @@ class NotionClient
 
   def change_todo_date_payload(start_date_string, end_date_string)
     start_date = Time.iso8601(start_date_string)
+    if start_date.hour.zero? && start_date.min.zero?
+      start_date = Date.iso8601(start_date_string)
+    else
+      end_date = start_date + (15 * 60)
+    end
+
     end_date = Time.iso8601(end_date_string) if end_date_string
 
     {
