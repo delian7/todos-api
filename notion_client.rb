@@ -16,18 +16,19 @@ class NotionClient
 
   GET_ALL_TODOS = 'all'
   CREATE_TODO = 'new'
+  UPDATE_TODO = 'update'
 
   def initialize
     @api_key = ENV.fetch('NOTION_API_KEY')
   end
 
-  def notion_data(operation, name: nil, raw_data: false)
-    return notion_response_body(operation, all_todos_payload) if raw_data
+  def notion_data(operation, name: nil, todo_ids: nil, raw_data: false)
+    return notion_response_body(NOTION_DATABASE_API_URL, operation, all_todos_payload) if raw_data
 
     case operation
     when GET_ALL_TODOS
       payload = all_todos_payload
-      response = notion_response_body(operation, payload)
+      response = notion_response_body(NOTION_DATABASE_API_URL, operation, payload)
       results = response['results']
       return [] if results.empty? && operation == GET_ALL_TODOS
 
@@ -41,24 +42,20 @@ class NotionClient
       end
     when CREATE_TODO
       payload = create_todo_payload(name)
-      notion_response_body(operation, payload)
+      notion_response_body(NOTION_API_URL, operation, payload)
       { message: 'Todo created successfully' }
+    when UPDATE_TODO
+      todo_ids.each do |id|
+        payload = mark_todo_done_payload
+        notion_response_body("#{NOTION_API_URL}/#{id}", operation, payload)
+      end
     end
   end
 
   private
 
-  def notion_response_body(operation, payload)
-    url = case operation
-          when GET_ALL_TODOS
-            NOTION_DATABASE_API_URL
-          when CREATE_TODO
-            NOTION_API_URL
-          else
-            raise ArgumentError, 'Invalid operation'
-          end
-
-    request, uri = notion_request(url)
+  def notion_response_body(url, operation, payload)
+    request, uri = notion_request(operation, url)
     request.body = payload.to_json
     response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
       http.request(request)
@@ -67,9 +64,9 @@ class NotionClient
     JSON.parse(response.body)
   end
 
-  def notion_request(url)
+  def notion_request(operation, url)
     uri = URI.parse(url)
-    request = Net::HTTP::Post.new(uri)
+    request = operation == UPDATE_TODO ? Net::HTTP::Patch.new(uri) : Net::HTTP::Post.new(uri)
     request['Authorization'] = "Bearer #{@api_key}"
     request['Content-Type'] = 'application/json'
     request['Notion-Version'] = '2022-06-28'
@@ -116,6 +113,16 @@ class NotionClient
           date: {
             start: Time.now.getlocal('-08:00').strftime('%Y-%m-%d')
           }
+        }
+      }
+    }
+  end
+
+  def mark_todo_done_payload
+    {
+      properties: {
+        Done: {
+          checkbox: true
         }
       }
     }

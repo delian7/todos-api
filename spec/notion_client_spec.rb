@@ -63,6 +63,16 @@ RSpec.describe NotionClient do
         expect(client.notion_data(NotionClient::CREATE_TODO)).to be_truthy
       end
     end
+
+    context 'when UPDATE_TODO' do
+      before do
+        stub_notion_update_request(1)
+      end
+
+      it 'creates updates a todo in Notion' do
+        expect(client.notion_data(NotionClient::UPDATE_TODO, todo_ids: [1])).to be_truthy
+      end
+    end
   end
 
   private
@@ -77,5 +87,17 @@ RSpec.describe NotionClient do
         }
       )
       .to_return(status: 200, body: "{\"results\": #{results.to_json}}", headers: {})
+  end
+
+  def stub_notion_update_request(id)
+    stub_request(:patch, "#{NotionClient::NOTION_API_URL}/#{id}")
+      .with(
+        headers: {
+          'Authorization' => 'Bearer test_api_key',
+          'Content-Type' => 'application/json',
+          'Notion-Version' => '2022-06-28'
+        }
+      )
+      .to_return(status: 200, body: "{\"results\": {}}", headers: {})
   end
 end

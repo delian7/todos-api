@@ -8,17 +8,23 @@ def lambda_handler(event:, context:) # rubocop:disable Lint/UnusedMethodArgument
   http_method = event['httpMethod']
   # resource = event['resource']
   raw_data = event.dig('queryStringParameters', 'raw_data')
-
   notion_client = NotionClient.new
 
   case http_method
   when 'GET'
-    send_response(notion_client.notion_data(operation: NotionClient::GET_ALL_TODOS, raw_data: raw_data))
+    send_response(notion_client.notion_data(NotionClient::GET_ALL_TODOS, raw_data: raw_data))
   when 'POST'
     raise 'todo name is required' if event['body'].nil?
 
     name = JSON.parse(event['body'])['name']
     send_response(notion_client.notion_data(NotionClient::CREATE_TODO, name: name))
+  when 'PATCH'
+    raise 'todo_id(s) is required' if event['body'].nil?
+
+    todo_ids = JSON.parse(event['body'])['todo_ids']
+    raise 'todo id(s) is required to update' if todo_ids.nil?
+
+    send_response(notion_client.notion_data(NotionClient::UPDATE_TODO, todo_ids: todo_ids))
   else
     method_not_allowed_response
   end
@@ -42,7 +48,7 @@ end
 
 def error_response(error)
   {
-    statusCode: 500,
+    statusCode: 400,
     body: error.message
   }
 end
