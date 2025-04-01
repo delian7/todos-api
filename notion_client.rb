@@ -15,25 +15,24 @@ class NotionClient
   NOTION_DATABASE_API_URL = "https://api.notion.com/v1/databases/#{DATABASE_ID}/query"
   NOTION_URI = URI.parse(NOTION_DATABASE_API_URL)
 
-  STATUS_ID = 'J%3Bjh'
-  SPECIFIC_ITEMS_ID = 'SE%7Be'
-  LOCATION_ID = 'W%5ERD'
-  PRODUCT_CATEGORY_ID = 'fUon'
-  EMPLOYEE_NAME_ID = 'title'
-
   def initialize
     @api_key = ENV.fetch('NOTION_API_KEY')
   end
 
   def notion_data(raw_data: false)
-    return notion_response_body if raw_data
+    return notion_response_body(todos_payload) if raw_data
 
-    notion_response_body.fetch('results').map do |data|
+    response = notion_response_body(todos_payload)
+    results = response['results']
+
+    return [] if results.empty?
+
+    results.map do |todo|
+      properties = todo['properties']
       {
-        employee_name: find_property_by_id(data, EMPLOYEE_NAME_ID).dig('title', 0, 'text', 'content'),
-        specific_item: find_property_by_id(data, SPECIFIC_ITEMS_ID).dig('select', 'name'),
-        product_category: find_property_by_id(data, PRODUCT_CATEGORY_ID).dig('select', 'name'),
-        status: find_property_by_id(data, STATUS_ID).dig('status', 'name')
+        name: properties.dig('Name', 'title', 0, 'text', 'content'),
+        date: properties.dig('Date', 'date', 'start'),
+        id: todo['id']
       }
     end
   end
@@ -44,8 +43,9 @@ class NotionClient
     data['properties'].values.find { |property| property['id'] == id }
   end
 
-  def notion_response_body
+  def notion_response_body(payload)
     request = notion_request
+    request.body = payload.to_json
     response = Net::HTTP.start(NOTION_URI.hostname, NOTION_URI.port, use_ssl: true) do |http|
       http.request(request)
     end
@@ -59,5 +59,34 @@ class NotionClient
     request['Content-Type'] = 'application/json'
     request['Notion-Version'] = '2022-06-28'
     request
+  end
+
+  def todos_payload
+    {
+      filter: {
+        and: [
+          {
+            property: 'Done',
+            checkbox: { equals: false }
+          },
+          {
+            property: 'Date',
+            date: {
+              before: (Time.now.getlocal('-08:00') + 86_400).strftime('%Y-%m-%dT00:00:00-08:00')
+            }
+          },
+          {
+            property: 'Tags',
+            multi_select: {
+              does_not_contain: 'hidden'
+            }
+          }
+        ]
+      },
+      sorts: [{
+        property: 'Date',
+        direction: 'ascending'
+      }]
+    }
   end
 end

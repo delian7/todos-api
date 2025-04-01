@@ -21,11 +21,10 @@ RSpec.describe NotionClient do
     let(:results) do
       [
         {
+          'id' => 'some_id',
           'properties' => {
-            'Employee Name' => { 'id' => NotionClient::EMPLOYEE_NAME_ID, 'title' => [{ 'text' => { 'content' => 'John Doe' } }] },
-            'Specific Items' => { 'id' => NotionClient::SPECIFIC_ITEMS_ID, 'select' => { 'name' => 'T-Shirt' } },
-            'Product Category' => { 'id' => NotionClient::PRODUCT_CATEGORY_ID, 'select' => { 'name' => 'Tops' } },
-            'Status' => { 'id' => NotionClient::STATUS_ID, 'status' => { 'name' => 'Active' } }
+            'Name' => { 'title' => [{ 'text' => { 'content' => 'Walk Buddy' } }] },
+            'Date' => { 'date' => { 'start' => '2023-10-01' } }
           }
         }
       ]
@@ -33,10 +32,9 @@ RSpec.describe NotionClient do
 
     let(:expected_data) do
       {
-        employee_name: 'John Doe',
-        specific_item: 'T-Shirt',
-        product_category: 'Tops',
-        status: 'Active'
+        name: 'Walk Buddy',
+        date: '2023-10-01',
+        id: 'some_id'
       }
     end
 

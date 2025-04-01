@@ -3,3 +3,6 @@ require:
 
 AllCops:
   NewCops: enable
+
+Metrics/MethodLength:
+  Max: 200
