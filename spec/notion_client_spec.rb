@@ -72,6 +72,18 @@ RSpec.describe NotionClient do
       it 'creates updates a todo in Notion' do
         expect(client.notion_data(NotionClient::UPDATE_TODO, todo_ids: [1])).to be_truthy
       end
+
+      context 'when a new date' do
+        it 'updates a todo date in Notion' do
+          expect(
+            client.notion_data(
+              NotionClient::UPDATE_TODO,
+              todo_ids: [1],
+              new_date: '2021-10-25T12:34:56-08:00'
+            )
+          ).to be_truthy
+        end
+      end
     end
   end
 

@@ -21,10 +21,21 @@ def lambda_handler(event:, context:) # rubocop:disable Lint/UnusedMethodArgument
   when 'PATCH'
     raise 'todo_id(s) is required' if event['body'].nil?
 
-    todo_ids = JSON.parse(event['body'])['todo_ids']
+    body = JSON.parse(event['body'])
+    todo_ids = body['todo_ids']
+    start_date = body['start_date']
+    end_date = body['end_date']
+
     raise 'todo id(s) is required to update' if todo_ids.nil?
 
-    send_response(notion_client.notion_data(NotionClient::UPDATE_TODO, todo_ids: todo_ids))
+    send_response(
+      notion_client.notion_data(
+        NotionClient::UPDATE_TODO,
+        todo_ids: todo_ids,
+        start_date: start_date,
+        end_date: end_date
+      )
+    )
   else
     method_not_allowed_response
   end

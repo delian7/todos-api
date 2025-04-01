@@ -22,7 +22,7 @@ class NotionClient
     @api_key = ENV.fetch('NOTION_API_KEY')
   end
 
-  def notion_data(operation, name: nil, todo_ids: nil, raw_data: false)
+  def notion_data(operation, name: nil, todo_ids: nil, raw_data: false, start_date: nil, end_date: nil)
     return notion_response_body(NOTION_DATABASE_API_URL, operation, all_todos_payload) if raw_data
 
     case operation
@@ -46,7 +46,12 @@ class NotionClient
       { message: 'Todo created successfully' }
     when UPDATE_TODO
       todo_ids.each do |id|
-        payload = mark_todo_done_payload
+        payload = if start_date
+                    change_todo_date_payload(start_date, end_date)
+                  else
+                    mark_todo_done_payload
+                  end
+
         notion_response_body("#{NOTION_API_URL}/#{id}", operation, payload)
       end
     end
@@ -123,6 +128,22 @@ class NotionClient
       properties: {
         Done: {
           checkbox: true
+        }
+      }
+    }
+  end
+
+  def change_todo_date_payload(start_date_string, end_date_string)
+    start_date = Time.iso8601(start_date_string)
+    end_date = Time.iso8601(end_date_string) if end_date_string
+
+    {
+      properties: {
+        Date: {
+          date: {
+            start: start_date.iso8601,
+            end: end_date&.iso8601
+          }
         }
       }
     }
