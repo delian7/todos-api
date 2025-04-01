@@ -74,12 +74,23 @@ RSpec.describe NotionClient do
       end
 
       context 'when a new date' do
-        it 'updates a todo date in Notion' do
+        it 'updates a start date in Notion' do
           expect(
             client.notion_data(
               NotionClient::UPDATE_TODO,
               todo_ids: [1],
-              new_date: '2021-10-25T12:34:56-08:00'
+              start_date: '2021-10-25T12:34:56-08:00'
+            )
+          ).to be_truthy
+        end
+
+        it 'updates a todo start and end date in Notion' do
+          expect(
+            client.notion_data(
+              NotionClient::UPDATE_TODO,
+              todo_ids: [1],
+              start_date: '2021-10-25T12:34:56-08:00',
+              end_date: '2021-10-25T01:34:56-08:00'
             )
           ).to be_truthy
         end
