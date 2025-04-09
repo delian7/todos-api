@@ -37,6 +37,7 @@ class NotionClient
         {
           name: properties.dig('Name', 'title', 0, 'text', 'content'),
           date: properties.dig('Date', 'date', 'start'),
+          url: todo['url'],
           id: todo['id']
         }
       end
