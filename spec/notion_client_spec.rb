@@ -35,7 +35,8 @@ RSpec.describe NotionClient do
         {
           name: 'Walk Buddy',
           date: '2023-10-01',
-          id: 'some_id'
+          id: 'some_id',
+          url: nil
         }
       end
 
@@ -121,6 +122,6 @@ RSpec.describe NotionClient do
           'Notion-Version' => '2022-06-28'
         }
       )
-      .to_return(status: 200, body: "{\"results\": {}}", headers: {})
+      .to_return(status: 200, body: '{"results": {}}', headers: {})
   end
 end

@@ -46,6 +46,11 @@ end
 def send_response(data)
   {
     statusCode: 200,
+    headers: {
+      'Access-Control-Allow-Origin' => '*', # Or use your frontend domain
+      'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers' => 'Content-Type'
+    },
     body: JSON.generate(data)
   }
 end
