@@ -2,7 +2,7 @@
 
 require 'rspec'
 require 'webmock/rspec'
-require_relative '../notion_client'
+require_relative '../src/notion_client'
 
 RSpec.describe NotionClient do
   let(:client) { described_class.new }

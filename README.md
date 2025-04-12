@@ -52,7 +52,7 @@ To run the tests, use RSpec:
 
 *Alternatively you can combine all of this into one request:*
   ```sh
-  zip -r notion-lambda-app.zip . && aws lambda update-function-code --function-name stationsync_fetcher \
+  zip -r notion-lambda-app.zip Gemfile Gemfile.lock src && aws lambda update-function-code --function-name notion_todos_fetcher \
   --zip-file fileb://notion-lambda-app.zip
   ```
 
