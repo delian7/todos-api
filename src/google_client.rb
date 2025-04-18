@@ -4,6 +4,8 @@ require 'google/apis/calendar_v3'
 require 'googleauth'
 require 'googleauth/stores/file_token_store'
 require 'json'
+require 'active_support'
+require 'active_support/time'
 
 # # GoogleClient is responsible for interacting with the Google API.
 # # It fetches data using the API key provided through environment variables.
@@ -21,7 +23,7 @@ class GoogleClient
     list_calendars
   end
 
-  def my_dos_from_calendar(calendar_id = primary_calendar_id)
+  def my_dos_from_calendar(calendar_id = primary_calendar[:id])
     events = fetch_events_from_calendar(calendar_id)
 
     events.items.map do |event|
@@ -54,19 +56,22 @@ class GoogleClient
   end
 
   def fetch_events_from_calendar(calendar_id)
-    # This method should be implemented to fetch events from the specified calendar
-    # For example:
+    Time.zone = primary_calendar[:timezone]
+    end_of_day = Time.zone.now.end_of_day.iso8601
+
     @calendar.list_events(
       calendar_id,
       q: '📝',
       max_results: 10,
       single_events: true,
-      order_by: 'startTime'
+      order_by: 'startTime',
+      time_max: end_of_day,
+      time_zone: primary_calendar[:timezone]
     )
   end
 
-  def primary_calendar_id
-    @user_calendars.find { |c| c[:primary] }&.dig(:id) || raise('No primary calendar found')
+  def primary_calendar
+    @user_calendars.find { |c| c[:primary] } || raise('No primary calendar found')
   end
 
   def authorize

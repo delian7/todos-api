@@ -94,14 +94,14 @@ RSpec.describe GoogleClient do
   context 'when REAL OAUTH is used' do
     before do
       Dotenv.load('.env')
-      skip 'Skipping real OAuth test. Set GOOGLE_OAUTH_CREDENTIALS in .env to run this test.'
+      # skip 'Skipping real OAuth test. Set GOOGLE_OAUTH_CREDENTIALS in .env to run this test.'
       WebMock.allow_net_connect!
     end
 
     describe '#initialize' do
       it 'sets the @api_key from the environment variable' do
         client = described_class.new
-        pp client.my_os_from_calendar
+        pp client.my_dos_from_calendar
       end
     end
   end
