@@ -3,6 +3,7 @@
 require 'json'
 
 require_relative 'notion_client'
+require_relative 'google_client'
 
 def lambda_handler(event:, context:) # rubocop:disable Lint/UnusedMethodArgument
   http_method = event['httpMethod']
