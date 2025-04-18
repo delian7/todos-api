@@ -6,3 +6,9 @@ AllCops:
 
 Metrics/MethodLength:
   Max: 200
+
+RSpec/VerifiedDoubles:
+  Enabled: false
+
+RSpec/ExampleLength:
+  Enabled: false
