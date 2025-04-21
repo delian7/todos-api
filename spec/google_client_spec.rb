@@ -169,7 +169,7 @@ RSpec.describe GoogleClient do
   context 'when REAL OAUTH is used' do
     before do
       Dotenv.load('.env')
-      # skip 'Skipping real OAuth test'
+      skip 'Skipping real OAuth test'
       WebMock.allow_net_connect!
     end
 
