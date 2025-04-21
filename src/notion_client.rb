@@ -3,6 +3,8 @@
 require 'dotenv/load' if ENV['AWS_EXECUTION_ENV'].nil?
 require 'net/http'
 require 'uri'
+require 'tzinfo'
+require 'time'
 
 # NotionClient is responsible for interacting with the Notion API.
 # It fetches data from a specified Notion database using the API key and database ID
@@ -80,6 +82,14 @@ class NotionClient
   end
 
   def all_todos_payload
+    timezone = TZInfo::Timezone.get('America/Los_Angeles')
+    now = timezone.now
+
+    # Get the UTC offset in seconds
+    offset_seconds = timezone.period_for_local(now).utc_total_offset
+
+    # Build end of day with correct offset
+    end_of_day = Time.new(now.year, now.month, now.day, 23, 59, 59, offset_seconds)
     {
       filter: {
         and: [
@@ -90,7 +100,7 @@ class NotionClient
           {
             property: 'Date',
             date: {
-              before: (Time.now.getlocal('-08:00') + 86_400).strftime('%Y-%m-%dT00:00:00-08:00')
+              before: end_of_day.iso8601
             }
           },
           {
