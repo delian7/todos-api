@@ -14,7 +14,14 @@ class GoogleClient
 
   OOB_URI = 'http://localhost:3000/oauth2callback'
   TOKEN_PATH = 'token.yaml'
-  SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY
+  SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR
+  # SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY
+  # SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_EVENTS
+  # SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY
+  # SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_SETTINGS_READONLY
+  # SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_SETTINGS
+  # SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY
+  # SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR
 
   def initialize
     @calendar = Google::Apis::CalendarV3::CalendarService.new
@@ -36,6 +43,23 @@ class GoogleClient
     end
   rescue Google::Apis::Error => e
     raise "Failed to fetch events from calendar: #{e.message}"
+  end
+
+  def create_my_do(start_time, end_time, summary, prefix = '📝')
+    event = Google::Apis::CalendarV3::Event.new(
+      summary: "#{prefix} #{summary}",
+      start: Google::Apis::CalendarV3::EventDateTime.new(
+        date_time: start_time,
+        time_zone: primary_calendar[:timezone]
+      ),
+      end: Google::Apis::CalendarV3::EventDateTime.new(
+        date_time: end_time,
+        time_zone: primary_calendar[:timezone]
+      )
+    )
+    @calendar.insert_event(primary_calendar[:id], event)
+  rescue Google::Apis::Error => e
+    raise "Failed to create event: #{e.message}"
   end
 
   private

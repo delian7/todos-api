@@ -12,3 +12,9 @@ RSpec/VerifiedDoubles:
 
 RSpec/ExampleLength:
   Enabled: false
+
+RSpec/MultipleExpectations:
+  Max: 7
+
+RSpec/MultipleMemoizedHelpers:
+  Max: 10

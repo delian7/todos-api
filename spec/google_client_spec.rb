@@ -89,19 +89,68 @@ RSpec.describe GoogleClient do
         )
       end
     end
+
+    describe '#create_my_do' do
+      let(:start_time) { Time.now.iso8601 }
+      let(:end_time) { (Time.now + 3600).iso8601 }
+      let(:summary) { 'Test Event' }
+      let(:mock_created_event) do
+        instance_double(
+          Google::Apis::CalendarV3::Event,
+          id: 'new_event1',
+          summary: "📝 #{summary}",
+          start: instance_double(Google::Apis::CalendarV3::EventDateTime,
+                                 date_time: start_time,
+                                 time_zone: 'UTC'),
+          end: instance_double(Google::Apis::CalendarV3::EventDateTime,
+                               date_time: end_time,
+                               time_zone: 'UTC')
+        )
+      end
+
+      before do
+        allow(mock_calendar).to receive(:insert_event).and_return(mock_created_event)
+      end
+
+      it 'creates a new event in the primary calendar' do
+        event = client.create_my_do(start_time, end_time, summary)
+        expect(event).to eq(mock_created_event)
+        expect(mock_calendar).to have_received(:insert_event).with(
+          'calendar1',
+          an_instance_of(Google::Apis::CalendarV3::Event)
+        )
+      end
+    end
   end
 
   context 'when REAL OAUTH is used' do
     before do
       Dotenv.load('.env')
-      skip 'Skipping real OAuth test. Set GOOGLE_OAUTH_CREDENTIALS in .env to run this test.'
+      skip 'Skipping real OAuth test'
       WebMock.allow_net_connect!
     end
 
-    describe '#initialize' do
-      it 'sets the @api_key from the environment variable' do
-        client = described_class.new
-        pp client.my_dos_from_calendar
+    describe '#my_dos_from_calendar' do
+      it 'fetches events from the primary calendar' do
+        events = client.my_dos_from_calendar
+        expect(events).to be_an(Array)
+        expect(events.first).to have_key(:id)
+        expect(events.first).to have_key(:summary)
+        pp events
+      end
+    end
+
+    describe '#create_my_do' do
+      it 'creates a new event in the primary calendar' do
+        start_time = Time.now.iso8601
+        end_time = (Time.now + 3600).iso8601
+        summary = 'Test Event'
+
+        event = client.create_my_do(start_time, end_time, summary)
+        expect(event).to be_a(Google::Apis::CalendarV3::Event)
+        # expect(event.summary).to eq(summary)
+        # expect(event.start.date_time).to eq(start_time)
+        # expect(event.end.date_time).to eq(end_time)
       end
     end
   end
