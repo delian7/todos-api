@@ -4,8 +4,8 @@ require 'google/apis/calendar_v3'
 require 'googleauth'
 require 'googleauth/stores/file_token_store'
 require 'json'
-require 'active_support'
-require 'active_support/time'
+require 'tzinfo'
+require 'time'
 
 # # GoogleClient is responsible for interacting with the Google API.
 # # It fetches data using the API key provided through environment variables.
@@ -93,8 +93,14 @@ class GoogleClient
   end
 
   def fetch_events_from_calendar(calendar_id)
-    Time.zone = primary_calendar[:timezone]
-    end_of_day = Time.zone.now.end_of_day.iso8601
+    timezone = TZInfo::Timezone.get(primary_calendar[:timezone])
+    now = timezone.now
+
+    # Get the UTC offset in seconds
+    offset_seconds = timezone.period_for_local(now).utc_total_offset
+
+    # Build end of day with correct offset
+    end_of_day = Time.new(now.year, now.month, now.day, 23, 59, 59, offset_seconds)
 
     @calendar.list_events(
       calendar_id,
@@ -102,7 +108,7 @@ class GoogleClient
       max_results: 10,
       single_events: true,
       order_by: 'startTime',
-      time_max: end_of_day,
+      time_max: end_of_day.iso8601,
       time_zone: primary_calendar[:timezone]
     )
   end
