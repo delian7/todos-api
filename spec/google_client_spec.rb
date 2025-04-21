@@ -13,6 +13,15 @@ RSpec.describe GoogleClient do
   context 'with stubbed Google API' do
     let(:mock_calendar) { instance_double(Google::Apis::CalendarV3::CalendarService) }
     let(:mock_client_options) { double('client_options') }
+    let(:mock_done_calendar) do
+      instance_double(
+        Google::Apis::CalendarV3::Calendar,
+        id: 'done_calendar',
+        summary: 'Done MyDos',
+        description: 'A calendar for done MyDos',
+        time_zone: 'UTC'
+      )
+    end
     let(:mock_calendar_list) do
       instance_double(
         Google::Apis::CalendarV3::CalendarList,
@@ -180,8 +189,10 @@ RSpec.describe GoogleClient do
       before do
         allow(mock_calendar).to receive_messages(
           get_event: mock_existing_event,
-          update_event: mock_existing_event
+          update_event: mock_existing_event,
+          move_event: mock_existing_event
         )
+        allow(client).to receive(:done_calendar).and_return({id: 'done_calendar'})
       end
 
       it 'marks an existing event as done' do
@@ -197,6 +208,22 @@ RSpec.describe GoogleClient do
       it 'raises an error if the event is not a myDo' do
         allow(mock_existing_event).to receive(:summary).and_return('Not a myDo')
         expect { client.mark_as_done(event_id) }.to raise_error('Event is not a myDo')
+      end
+    end
+
+    describe '#create_done_calendar' do
+      before do
+        allow(mock_calendar).to receive(:insert_calendar).and_return(mock_done_calendar)
+      end
+
+      it 'creates a new calendar for done events' do
+        client.create_done_calendar
+        expect(mock_calendar).to have_received(:insert_calendar)
+      end
+
+      it 'raises an error if the calendar already exists' do
+        allow(mock_calendar).to receive(:insert_calendar).and_raise(Google::Apis::ClientError.new('Already Exists'))
+        expect { client.create_done_calendar }.to raise_error(RuntimeError)
       end
     end
   end
@@ -251,6 +278,14 @@ RSpec.describe GoogleClient do
 
         event = client.update_my_do(event_id, start_time, end_time, summary)
         expect(event).to be_a(Google::Apis::CalendarV3::Event)
+      end
+    end
+
+    describe '#create_done_calendar' do
+      it 'creates a new calendar for done events' do
+        calendar = client.create_done_calendar
+        expect(calendar.summary).to eq('Done MyDos')
+        expect(calendar.description).to eq('A calendar for done MyDos')
       end
     end
   end

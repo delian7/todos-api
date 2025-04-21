@@ -55,7 +55,7 @@ class GoogleClient
     raise "Failed to create event: #{e.message}"
   end
 
-  def mark_as_done(event_id)
+  def mark_as_done(event_id, done_calendar_id = nil)
     existing_event = @calendar.get_event(primary_calendar[:id], event_id)
     raise 'Event is not a myDo' unless existing_event.summary.start_with?('📝')
 
@@ -65,6 +65,12 @@ class GoogleClient
       end: existing_event.end
     )
     @calendar.update_event(primary_calendar[:id], event_id, updated_event)
+
+    # byebug
+    # raise 'Done calendar not found' unless done_calendar || create_done_calendar
+    create_done_calendar unless done_calendar
+
+    @calendar.move_event(primary_calendar[:id], event_id, done_calendar[:id])
   rescue Google::Apis::Error => e
     raise "Failed to mark event as done: #{e.message}"
   end
@@ -87,6 +93,28 @@ class GoogleClient
     @calendar.update_event(primary_calendar[:id], event_id, event)
   rescue Google::Apis::Error => e
     raise "Failed to update event: #{e.message}"
+  end
+
+  def create_done_calendar
+    raise 'Done calendar already exists' if @user_calendars.any? { |c| c[:name] == 'Done' }
+
+    calendar = Google::Apis::CalendarV3::Calendar.new(
+      summary: 'Done MyDos',
+      time_zone: primary_calendar[:timezone],
+      description: 'A calendar for done MyDos'
+    )
+    created_calendar = @calendar.insert_calendar(calendar)
+    @user_calendars << {
+      id: created_calendar.id,
+      name: created_calendar.summary,
+      description: created_calendar.description,
+      timezone: created_calendar.time_zone,
+      primary: false
+    }
+    puts "Created calendar: #{created_calendar.summary}"
+    { id: created_calendar.id }
+  rescue Google::Apis::Error => e
+    raise "Failed to create done calendar: #{e.message}"
   end
 
   private
@@ -129,6 +157,10 @@ class GoogleClient
 
   def primary_calendar
     @user_calendars.find { |c| c[:primary] } || raise('No primary calendar found')
+  end
+
+  def done_calendar
+    @user_calendars.find { |c| c[:name] == 'Done MyDos' }
   end
 
   def authorize
