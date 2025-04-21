@@ -55,6 +55,20 @@ class GoogleClient
     raise "Failed to create event: #{e.message}"
   end
 
+  def mark_as_done(event_id)
+    existing_event = @calendar.get_event(primary_calendar[:id], event_id)
+    raise 'Event is not a myDo' unless existing_event.summary.start_with?('📝')
+
+    updated_event = Google::Apis::CalendarV3::Event.new(
+      summary: existing_event.summary.sub('📝', '✅'),
+      start: existing_event.start,
+      end: existing_event.end
+    )
+    @calendar.update_event(primary_calendar[:id], event_id, updated_event)
+  rescue Google::Apis::Error => e
+    raise "Failed to mark event as done: #{e.message}"
+  end
+
   def update_my_do(event_id, start_time, end_time, summary = nil)
     existing_event = @calendar.get_event(primary_calendar[:id], event_id)
     raise 'Event is not a myDo' unless existing_event.summary.start_with?('📝')
