@@ -121,6 +121,49 @@ RSpec.describe GoogleClient do
         )
       end
     end
+
+    describe '#update_my_do' do
+      let(:event_id) { 'event1' }
+      let(:start_time) { Time.now.iso8601 }
+      let(:end_time) { (Time.now + 3600).iso8601 }
+      let(:summary) { 'Updated Event' }
+      let(:mock_existing_event) do
+        instance_double(
+          Google::Apis::CalendarV3::Event,
+          id: event_id,
+          summary: '📝 Test Event',
+          start: double(date_time: start_time),
+          end: double(date_time: end_time)
+        )
+      end
+
+      before do
+        allow(mock_calendar).to receive_messages(
+          get_event: mock_existing_event,
+          update_event: mock_existing_event
+        )
+      end
+
+      it 'updates an existing event in the primary calendar' do
+        event = client.update_my_do(event_id, start_time, end_time, summary)
+        expect(event).to eq(mock_existing_event)
+        expect(mock_calendar).to have_received(:update_event).with(
+          'calendar1',
+          event_id,
+          an_instance_of(Google::Apis::CalendarV3::Event)
+        )
+      end
+
+      it 'raises an error if the event is not found' do
+        allow(mock_calendar).to receive(:get_event).and_raise(Google::Apis::ClientError.new('Not Found'))
+        expect { client.update_my_do(event_id, start_time, end_time) }.to raise_error(RuntimeError)
+      end
+
+      it 'raises an error if the event is not a myDo' do
+        allow(mock_existing_event).to receive(:summary).and_return('Not a myDo')
+        expect { client.update_my_do(event_id, start_time, end_time) }.to raise_error('Event is not a myDo')
+      end
+    end
   end
 
   context 'when REAL OAUTH is used' do
@@ -151,6 +194,20 @@ RSpec.describe GoogleClient do
         # expect(event.summary).to eq(summary)
         # expect(event.start.date_time).to eq(start_time)
         # expect(event.end.date_time).to eq(end_time)
+      end
+    end
+
+    describe '#update_my_do' do
+      it 'updates an existing event in the primary calendar' do
+        start_time = Time.now.iso8601
+        end_time = (Time.now + 3600).iso8601
+        summary = 'Updated Event'
+        events = client.my_dos_from_calendar
+
+        event_id = events.dig(0, :id) # Replace with a valid event ID
+
+        event = client.update_my_do(event_id, start_time, end_time, summary)
+        expect(event).to be_a(Google::Apis::CalendarV3::Event)
       end
     end
   end
