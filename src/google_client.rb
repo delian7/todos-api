@@ -55,7 +55,7 @@ class GoogleClient
     raise "Failed to create event: #{e.message}"
   end
 
-  def mark_as_done(event_id, done_calendar_id = nil)
+  def mark_as_done(event_id)
     existing_event = @calendar.get_event(primary_calendar[:id], event_id)
     raise 'Event is not a myDo' unless existing_event.summary.start_with?('📝')
 
@@ -66,8 +66,6 @@ class GoogleClient
     )
     @calendar.update_event(primary_calendar[:id], event_id, updated_event)
 
-    # byebug
-    # raise 'Done calendar not found' unless done_calendar || create_done_calendar
     create_done_calendar unless done_calendar
 
     @calendar.move_event(primary_calendar[:id], event_id, done_calendar[:id])
@@ -96,7 +94,7 @@ class GoogleClient
   end
 
   def create_done_calendar
-    raise 'Done calendar already exists' if @user_calendars.any? { |c| c[:name] == 'Done' }
+    raise 'Done calendar already exists' if @user_calendars.any? { |c| c[:name] == 'Done MyDos' }
 
     calendar = Google::Apis::CalendarV3::Calendar.new(
       summary: 'Done MyDos',
@@ -104,13 +102,7 @@ class GoogleClient
       description: 'A calendar for done MyDos'
     )
     created_calendar = @calendar.insert_calendar(calendar)
-    @user_calendars << {
-      id: created_calendar.id,
-      name: created_calendar.summary,
-      description: created_calendar.description,
-      timezone: created_calendar.time_zone,
-      primary: false
-    }
+
     puts "Created calendar: #{created_calendar.summary}"
     { id: created_calendar.id }
   rescue Google::Apis::Error => e

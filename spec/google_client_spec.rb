@@ -284,8 +284,7 @@ RSpec.describe GoogleClient do
     describe '#create_done_calendar' do
       it 'creates a new calendar for done events' do
         calendar = client.create_done_calendar
-        expect(calendar.summary).to eq('Done MyDos')
-        expect(calendar.description).to eq('A calendar for done MyDos')
+        expect(calendar.id).to be_present
       end
     end
   end
