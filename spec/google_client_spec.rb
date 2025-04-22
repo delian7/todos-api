@@ -39,7 +39,7 @@ RSpec.describe GoogleClient do
     end
 
     before do
-      Dotenv.load('.env.test')
+      Dotenv.overload('.env.test')
       # Mock the calendar service
       allow(Google::Apis::CalendarV3::CalendarService).to receive(:new).and_return(mock_calendar)
       allow(mock_calendar).to receive_messages(
@@ -230,7 +230,7 @@ RSpec.describe GoogleClient do
 
   context 'when REAL OAUTH is used' do
     before do
-      Dotenv.load('.env')
+      Dotenv.overload('.env')
       skip 'Skipping real OAuth test' unless ENV['REAL_OAUTH'] == 'true'
       WebMock.allow_net_connect!
     end

@@ -29,12 +29,25 @@ class NotionClient
 
     case operation
     when GET_ALL_TODOS
+
+      timezone = TZInfo::Timezone.get('America/Los_Angeles')
+      now = timezone.now
+
+      # Build end of day with correct offset
+      end_of_day = Time.new(now.year, now.month, now.day, 23, 59, 59)
+
       payload = all_todos_payload
       response = notion_response_body(NOTION_DATABASE_API_URL, operation, payload)
       results = response['results']
       return [] if results.empty? && operation == GET_ALL_TODOS
 
-      results.map do |todo|
+      filtered_results = results.select do |item|
+        name = item['properties']['Name']['title'][0]['text']['content']
+        date = Time.parse(item['properties']['Date']['date']['start'])
+        date <= end_of_day
+      end
+
+      filtered_results.map do |todo|
         properties = todo['properties']
         {
           name: properties.dig('Name', 'title', 0, 'text', 'content'),
