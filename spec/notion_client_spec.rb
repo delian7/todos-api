@@ -38,7 +38,8 @@ RSpec.describe NotionClient do
             name: 'Walk Buddy',
             date: '2023-10-01',
             id: 'some_id',
-            url: nil
+            url: nil,
+            isCompleted: nil
           }
         end
 
@@ -114,6 +115,12 @@ RSpec.describe NotionClient do
       todos = client.notion_data(NotionClient::GET_ALL_TODOS)
       expect(todos).not_to be_empty
       pp todos
+    end
+
+    it 'creates a new todo' do
+      client = described_class.new
+      todo = client.notion_data(NotionClient::CREATE_TODO, name: 'tester')
+      expect(todo).not_to be_empty
     end
   end
 

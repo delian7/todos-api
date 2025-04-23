@@ -53,13 +53,20 @@ class NotionClient
           name: properties.dig('Name', 'title', 0, 'text', 'content'),
           date: properties.dig('Date', 'date', 'start'),
           url: todo['url'],
-          id: todo['id']
+          id: todo['id'],
+          isCompleted: properties.dig('Done', 'checkbox')
         }
       end
     when CREATE_TODO
       payload = create_todo_payload(name)
-      notion_response_body(NOTION_API_URL, operation, payload)
-      { message: 'Todo created successfully' }
+      body = notion_response_body(NOTION_API_URL, operation, payload)
+      {
+        name: name,
+        id: body['id'],
+        url: body['url'],
+        date: Time.now.getlocal('-08:00').strftime('%Y-%m-%d'),
+        isCompleted: false
+      }
     when UPDATE_TODO
       todo_ids.each do |id|
         payload = if start_date
