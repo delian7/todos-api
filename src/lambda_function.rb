@@ -8,20 +8,35 @@ require_relative 'supabase_client'
 
 def lambda_handler(event:, context:) # rubocop:disable Lint/UnusedMethodArgument
   http_method = event['httpMethod']
-  # resource = event['resource']
+  resource = event['resource']
   raw_data = event.dig('queryStringParameters', 'raw_data')
   notion_client = NotionClient.new
 
   case http_method
   when 'GET'
-    send_response(SupabaseClient.todos)
-    send_response(notion_client.notion_data(NotionClient::GET_ALL_TODOS, raw_data: raw_data))
+    return method_not_allowed_response if resource == '/todos/refresh-cache'
+
+    supabase_todos = SupabaseClient.todos
+    return send_response(supabase_todos) if supabase_todos.count.positive?
+
+    notion_todos = notion_client.notion_data(NotionClient::GET_ALL_TODOS, raw_data: raw_data)
+    SupabaseClient.persist_notion_todos(notion_todos)
+    send_response(notion_todos)
   when 'POST'
+    if resource == '/todos/refresh-cache'
+      notion_todos = notion_client.notion_data(NotionClient::GET_ALL_TODOS, raw_data: raw_data)
+      SupabaseClient.persist_notion_todos(notion_todos)
+      return send_response 'refreshed'
+    end
+
     raise 'todo name is required' if event['body'].nil?
 
+    SupabaseClient.remove_stale_todos
     name = JSON.parse(event['body'])['name']
     send_response(notion_client.notion_data(NotionClient::CREATE_TODO, name: name))
   when 'PATCH'
+    return method_not_allowed_response if resource == '/todos/refresh-cache'
+
     raise 'todo_id(s) is required' if event['body'].nil?
 
     body = JSON.parse(event['body'])
@@ -30,6 +45,8 @@ def lambda_handler(event:, context:) # rubocop:disable Lint/UnusedMethodArgument
     end_date = body['end_date']
 
     raise 'todo id(s) is required to update' if todo_ids.nil?
+
+    SupabaseClient.remove_stale_todos
 
     send_response(
       notion_client.notion_data(

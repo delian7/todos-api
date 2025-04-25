@@ -9,11 +9,21 @@ require 'stringio'
 
 GET_RECORDS = 'GET'
 CREATE_RECORD = 'POST'
+DELETE_RECORD = 'DELETE'
 
 class SupabaseClient
   def self.todos
-    response = supabase_response(GET_RECORDS, 'todos')
-    JSON.parse(response)
+    response = supabase_response(GET_RECORDS, 'todos?key=eq.notion-todos')
+    JSON.parse(response).dig(0, 'data') || []
+  end
+
+  def self.remove_stale_todos
+    supabase_response(DELETE_RECORD, 'todos?key=eq.notion-todos')
+  end
+
+  def self.persist_notion_todos(notion_todos)
+    remove_stale_todos
+    supabase_response(CREATE_RECORD, 'todos', { data: notion_todos, key: 'notion-todos' })
   end
 
   def self.users
@@ -38,7 +48,7 @@ class SupabaseClient
 
     case operation
     when GET_RECORDS
-      response = HTTParty.get('https://dgzxmivshyxkmridhggl.supabase.co/rest/v1/users', {
+      response = HTTParty.get("https://dgzxmivshyxkmridhggl.supabase.co/rest/v1/#{table}", {
                                 headers: {
                                   'apikey' => ENV.fetch('SUPABASE_TOKEN', nil),
                                   'Accept' => 'application/json'
@@ -58,6 +68,14 @@ class SupabaseClient
       request['Content-Type'] = 'application/json'
       request.body = record.to_json
       http.request(request)
+
+    when DELETE_RECORD
+      HTTParty.delete("https://dgzxmivshyxkmridhggl.supabase.co/rest/v1/#{table}", {
+                        headers: {
+                          'apikey' => ENV.fetch('SUPABASE_TOKEN', nil),
+                          'Accept' => 'application/json'
+                        }
+                      })
     end
   end
 end
