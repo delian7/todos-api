@@ -192,7 +192,7 @@ RSpec.describe GoogleClient do
           update_event: mock_existing_event,
           move_event: mock_existing_event
         )
-        allow(client).to receive(:done_calendar).and_return({id: 'done_calendar'})
+        allow(client).to receive(:done_calendar).and_return({ id: 'done_calendar' })
       end
 
       it 'marks an existing event as done' do
