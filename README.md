@@ -28,34 +28,42 @@ This project contains a Ruby application that interacts with the Notion API. It 
   ```
 
 ## Running Tests
+
 To run the tests, use RSpec:
+
   ```sh
   bundle exec rspec
   ```
 
 ## Deploying to AWS Lambda
+
 1. Setup and configure AWS CLI
+
   ```sh
   aws configure
   ```
 
 1. Package the application:
+
   ```sh
   zip -r notion-lambda-app.zip .
   ```
 
-2. Update the Lambda function code:
+1. Update the Lambda function code:
+
   ```sh
   aws lambda update-function-code --function-name stationsync_fetcher \
   --zip-file fileb://notion-lambda-app.zip
   ```
 
 *Alternatively you can combine all of this into one request:*
+
   ```sh
   zip -r notion-lambda-app.zip Gemfile Gemfile.lock src vendor && aws lambda update-function-code --function-name notion_todos_fetcher \
   --zip-file fileb://notion-lambda-app.zip
   ```
 
 ## Usage
+
 The Lambda function handles HTTP requests and interacts with the Notion API. It supports the following endpoints:
   `GET /employees`: Fetches employee data from the Notion database.

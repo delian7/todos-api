@@ -4,6 +4,7 @@ require 'json'
 
 require_relative 'notion_client'
 # require_relative 'google_client'
+require_relative 'supabase_client'
 
 def lambda_handler(event:, context:) # rubocop:disable Lint/UnusedMethodArgument
   http_method = event['httpMethod']
@@ -13,6 +14,7 @@ def lambda_handler(event:, context:) # rubocop:disable Lint/UnusedMethodArgument
 
   case http_method
   when 'GET'
+    send_response(SupabaseClient.todos)
     send_response(notion_client.notion_data(NotionClient::GET_ALL_TODOS, raw_data: raw_data))
   when 'POST'
     raise 'todo name is required' if event['body'].nil?
